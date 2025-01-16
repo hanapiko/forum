@@ -1,0 +1,96 @@
+FORUM APPLICATION PROJECT STRUCTURE
+===================================
+
+1. Project Overview
+------------------
+A web-based forum application built with Go, featuring:
+- User authentication
+- Post creation and management
+- Commenting system
+- Interaction (like/dislike) functionality
+
+2. Directory Structure
+---------------------
+/forum
+├── db/                 # Database management
+│   ├── database.go     # Database connection and migration
+│   └── migrations/     # SQL migration scripts
+│       └── 001_create_tables.sql
+
+├── handlers/           # HTTP request handlers
+│   ├── auth_handlers.go       # User registration, login, logout
+│   ├── post_handlers.go       # Post-related operations
+│   └── comment_handlers.go    # Comment-related operations
+
+├── middleware/         # Request middleware
+│   └── auth.go         # Authentication and authorization middleware
+
+├── pkg/                # Utility packages
+│   └── logger/         # Logging configuration and utilities
+│       └── logger.go
+
+├── repository/         # Data access layer
+│   ├── user_repository.go
+│   ├── post_repository.go
+│   ├── comment_repository.go
+│   └── interaction_repository.go
+
+├── routes/             # Routing configuration
+│   └── router.go       # Main router setup
+
+├── templates/          # Frontend HTML templates (future)
+│   ├── auth/
+│   ├── posts/
+│   └── comments/
+
+3. Key Components
+----------------
+- Authentication System
+  * JWT-based authentication
+  * User registration and login
+  * Password hashing
+  * Token generation and validation
+
+- Database
+  * SQLite as primary database
+  * Repositories for data access
+  * Migration support
+
+- Handlers
+  * RESTful API endpoints
+  * Request processing
+  * Response formatting
+
+4. Planned Enhancements
+----------------------
+- Comprehensive logging
+- Advanced error handling
+- Frontend templates
+- Security middleware
+- Pagination
+- Advanced search functionality
+
+5. Technology Stack
+------------------
+- Backend: Go (Golang)
+- Database: SQLite
+- Authentication: JWT
+- Middleware: Standard Go http middleware
+
+6. Development Workflow
+----------------------
+1. Database migration
+2. Repository implementation
+3. Handler development
+4. Middleware creation
+5. Routing configuration
+6. Testing
+7. Frontend integration
+
+7. Future Roadmap
+----------------
+- User profiles
+- Advanced filtering
+- Real-time notifications
+- Improved search capabilities
+- Performance optimization
