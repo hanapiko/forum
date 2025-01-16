@@ -6,103 +6,104 @@ import (
 	"time"
 
 	"forum/db"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
-// UserRepository handles database operations for users
 type UserRepository struct {
-	db *sql.DB
+	conn *sql.DB
 }
 
-// NewUserRepository creates a new instance of UserRepository
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(conn *sql.DB) *UserRepository {
+	return &UserRepository{conn: conn}
 }
 
-// Create adds a new user to the database
-func (r *UserRepository) Create(user *db.User) error {
+// Create creates a new user in the database
+func (r *UserRepository) Create(user *db.User, password string) error {
 	// Validate user data
 	if err := user.Validate(); err != nil {
 		return err
 	}
 
-	// Check if email already exists
-	existingUser, _ := r.FindByEmail(user.Email)
-	if existingUser != nil {
-		return errors.New("email already registered")
-	}
-
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	// Hash the password
+	passwordHash, err := db.HashPassword(password)
 	if err != nil {
 		return err
 	}
 
-	// Insert user into database
-	query := `INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, ?)`
-	result, err := r.db.Exec(query, user.Username, user.Email, string(hashedPassword), time.Now())
+	// Prepare SQL insert statement
+	query := `INSERT INTO users (username, email, password_hash, created_at) 
+			  VALUES (?, ?, ?, ?)`
+
+	// Execute the query
+	result, err := r.conn.Exec(query, user.Username, user.Email, passwordHash, time.Now())
 	if err != nil {
+		// Check for unique constraint violation
 		return err
 	}
 
-	// Set the ID of the created user
+	// Get the ID of the newly inserted user
 	id, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
 	user.ID = id
-	user.CreatedAt = time.Now()
 
 	return nil
 }
 
-// FindByEmail retrieves a user by their email
+// FindByEmail finds a user by their email
 func (r *UserRepository) FindByEmail(email string) (*db.User, error) {
+	query := `SELECT id, username, email, password_hash, created_at 
+			  FROM users WHERE email = ?`
+
 	user := &db.User{}
-	query := `SELECT id, username, email, password_hash, created_at FROM users WHERE email = ?`
-	err := r.db.QueryRow(query, email).Scan(
+	err := r.conn.QueryRow(query, email).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&user.PasswordHash,
 		&user.CreatedAt,
 	)
+
+	if err == sql.ErrNoRows {
+		return nil, errors.New("user not found")
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
 		return nil, err
 	}
+
 	return user, nil
 }
 
 // Authenticate checks user credentials
 func (r *UserRepository) Authenticate(email, password string) (*db.User, error) {
+	// Find user by email
 	user, err := r.FindByEmail(email)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("invalid email or password")
 	}
 
-	// Compare passwords
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return nil, errors.New("invalid credentials")
+	// Check password
+	if !db.CheckPasswordHash(password, user.PasswordHash) {
+		return nil, errors.New("invalid email or password")
 	}
 
 	return user, nil
 }
 
-// UpdatePassword allows a user to change their password
-func (r *UserRepository) UpdatePassword(userID int64, newPassword string) error {
-	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
+// Update updates user information
+func (r *UserRepository) Update(user *db.User) error {
+	query := `UPDATE users 
+			  SET username = ?, email = ? 
+			  WHERE id = ?`
 
-	// Update password in database
-	query := `UPDATE users SET password_hash = ? WHERE id = ?`
-	_, err = r.db.Exec(query, string(hashedPassword), userID)
+	_, err := r.conn.Exec(query, user.Username, user.Email, user.ID)
+	return err
+}
+
+// Delete removes a user from the database
+func (r *UserRepository) Delete(userID int64) error {
+	query := `DELETE FROM users WHERE id = ?`
+
+	_, err := r.conn.Exec(query, userID)
 	return err
 }
