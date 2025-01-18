@@ -45,11 +45,12 @@ func (db *Database) Migrate() error {
 		return err
 	}
 
+	// Execute migration script
 	_, err = db.Conn.Exec(string(migrationScript))
 	return err
 }
 
-// Close database connection
+// Close closes the database connection
 func (db *Database) Close() error {
 	return db.Conn.Close()
 }

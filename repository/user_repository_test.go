@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"forum/db"
+	"forum/models"
 )
 
 func setupTestDB(t *testing.T) (*sql.DB, func()) {
@@ -22,7 +22,7 @@ func setupTestDB(t *testing.T) (*sql.DB, func()) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
 			email TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL,
+			password TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
@@ -45,12 +45,13 @@ func TestUserCreation(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	// Test successful user creation
-	user := &db.User{
+	user := &models.User{
 		Username: "testuser",
 		Email:    "test@example.com",
+		Password: "StrongPass123",
 	}
 
-	err := repo.Create(user, "StrongPass123")
+	err := repo.Create(user)
 	if err != nil {
 		t.Errorf("Failed to create user: %v", err)
 	}
@@ -72,12 +73,13 @@ func TestUserAuthentication(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	// Create a test user
-	user := &db.User{
+	user := &models.User{
 		Username: "authuser",
 		Email:    "auth@example.com",
+		Password: "ValidPass123",
 	}
 
-	err := repo.Create(user, "ValidPass123")
+	err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -105,21 +107,23 @@ func TestUserEmailUniqueness(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	// Create first user
-	user1 := &db.User{
+	user1 := &models.User{
 		Username: "user1",
 		Email:    "unique@example.com",
+		Password: "Password123",
 	}
-	err := repo.Create(user1, "Password123")
+	err := repo.Create(user1)
 	if err != nil {
 		t.Fatalf("Failed to create first user: %v", err)
 	}
 
 	// Try to create user with same email
-	user2 := &db.User{
+	user2 := &models.User{
 		Username: "user2",
 		Email:    "unique@example.com",
+		Password: "AnotherPass123",
 	}
-	err = repo.Create(user2, "AnotherPass123")
+	err = repo.Create(user2)
 	if err == nil {
 		t.Error("Should not allow creating user with duplicate email")
 	}
@@ -132,12 +136,13 @@ func TestUserUpdate(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	// Create a test user
-	user := &db.User{
+	user := &models.User{
 		Username: "updateuser",
 		Email:    "update@example.com",
+		Password: "InitialPass123",
 	}
 
-	err := repo.Create(user, "InitialPass123")
+	err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -168,12 +173,13 @@ func TestUserDelete(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	// Create a test user
-	user := &db.User{
+	user := &models.User{
 		Username: "deleteuser",
 		Email:    "delete@example.com",
+		Password: "DeletePass123",
 	}
 
-	err := repo.Create(user, "DeletePass123")
+	err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
