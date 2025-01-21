@@ -1,0 +1,15 @@
+{{define "content"}}
+<div class="posts">
+    {{range .Posts}}
+    <div class="post">
+        <h2><a href="/post/{{.ID}}">{{.Title}}</a></h2>
+        <p>By {{.Author}}</p>
+        <p>{{.Content}}</p>
+        <div class="reactions">
+            <span>👍 {{.Likes}}</span>
+            <span>👎 {{.Dislikes}}</span>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}} 

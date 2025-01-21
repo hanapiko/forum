@@ -1,0 +1,25 @@
+{{define "content"}}
+<div class="create-post">
+    <h2>Create New Post</h2>
+    <form method="POST" action="/create-post">
+        <div>
+            <label>Title:</label>
+            <input type="text" name="title" required>
+        </div>
+        <div>
+            <label>Content:</label>
+            <textarea name="content" required></textarea>
+        </div>
+        <div>
+            <label>Categories:</label>
+            {{range .Categories}}
+            <label>
+                <input type="checkbox" name="categories" value="{{.}}">
+                {{.}}
+            </label>
+            {{end}}
+        </div>
+        <button type="submit">Create Post</button>
+    </form>
+</div>
+{{end}} 
