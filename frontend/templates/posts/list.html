@@ -1,0 +1,41 @@
+{{ define "content" }}
+<div class="posts-container">
+    <h2>Recent Posts</h2>
+    
+    <div class="filters">
+        <select name="category" id="category-filter">
+            <option value="">All Categories</option>
+            {{ range .Categories }}
+            <option value="{{ .ID }}">{{ .Name }}</option>
+            {{ end }}
+        </select>
+    </div>
+
+    {{ if not .Posts }}
+    <p>No posts available.</p>
+    {{ else }}
+    <div class="posts-grid">
+        {{ range .Posts }}
+        <div class="post-card">
+            <h3>{{ .Title }}</h3>
+            <p>{{ truncate .Content 100 }}</p>
+            <div class="post-meta">
+                <span>By {{ .Author }}</span>
+                <span>{{ .CreatedAt }}</span>
+                <a href="/posts/{{ .ID }}" class="btn">Read More</a>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+
+    <div class="pagination">
+        {{ if .PrevPage }}
+        <a href="/posts?page={{ .PrevPage }}" class="btn">Previous</a>
+        {{ end }}
+        {{ if .NextPage }}
+        <a href="/posts?page={{ .NextPage }}" class="btn">Next</a>
+        {{ end }}
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,16 @@
+{{ define "content" }}
+<div class="error-container">
+    <h1>500 - Internal Server Error</h1>
+    <p>Something went wrong on our end. Our team has been notified.</p>
+    <div class="error-details">
+        <p>{{ .ErrorMessage }}</p>
+        {{ if .User.IsAdmin }}
+        <pre>{{ .ErrorTrace }}</pre>
+        {{ end }}
+    </div>
+    <div class="error-actions">
+        <a href="/" class="btn">Return to Home</a>
+        <a href="#" onclick="window.location.reload()" class="btn">Retry</a>
+    </div>
+</div>
+{{ end }}

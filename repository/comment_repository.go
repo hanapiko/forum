@@ -13,6 +13,12 @@ type Comment struct {
 	CreatedAt time.Time
 }
 
+// CommentRepositoryInterface defines the methods that a comment repository must implement
+type CommentRepositoryInterface interface {
+	Create(comment *Comment) error
+	GetByPostID(postID int64) ([]Comment, error)
+}
+
 type CommentRepository struct {
 	conn *sql.DB
 }
@@ -68,3 +74,6 @@ func (r *CommentRepository) GetByPostID(postID int64) ([]Comment, error) {
 
 	return comments, nil
 }
+
+// Ensure CommentRepository implements the interface
+var _ CommentRepositoryInterface = &CommentRepository{}

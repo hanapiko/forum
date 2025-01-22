@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"database/sql"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -9,37 +8,8 @@ import (
 	"forum/models"
 )
 
-func setupTestDB(t *testing.T) (*sql.DB, func()) {
-	// Create a temporary in-memory database for testing
-	database, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatalf("Failed to open test database: %v", err)
-	}
-
-	// Run migrations
-	_, err = database.Exec(`
-		CREATE TABLE users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL UNIQUE,
-			email TEXT NOT NULL UNIQUE,
-			password TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		t.Fatalf("Failed to create users table: %v", err)
-	}
-
-	// Cleanup function to close the database
-	cleanup := func() {
-		database.Close()
-	}
-
-	return database, cleanup
-}
-
 func TestUserCreation(t *testing.T) {
-	testDB, cleanup := setupTestDB(t)
+	testDB, cleanup := SetupTestDB(t)
 	defer cleanup()
 
 	repo := NewUserRepository(testDB)
@@ -51,9 +21,12 @@ func TestUserCreation(t *testing.T) {
 		Password: "StrongPass123",
 	}
 
-	err := repo.Create(user)
+	createdUser, err := repo.Create(user)
 	if err != nil {
 		t.Errorf("Failed to create user: %v", err)
+	}
+	if createdUser.ID == 0 {
+		t.Errorf("Expected non-zero ID, got %d", createdUser.ID)
 	}
 
 	// Verify user was created
@@ -61,13 +34,16 @@ func TestUserCreation(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to find created user: %v", err)
 	}
+	if foundUser.ID == 0 {
+		t.Errorf("Expected non-zero user ID, got 0")
+	}
 	if foundUser.Username != "testuser" {
 		t.Errorf("Unexpected username: got %s, want testuser", foundUser.Username)
 	}
 }
 
 func TestUserAuthentication(t *testing.T) {
-	testDB, cleanup := setupTestDB(t)
+	testDB, cleanup := SetupTestDB(t)
 	defer cleanup()
 
 	repo := NewUserRepository(testDB)
@@ -79,7 +55,7 @@ func TestUserAuthentication(t *testing.T) {
 		Password: "ValidPass123",
 	}
 
-	err := repo.Create(user)
+	_, err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -101,7 +77,7 @@ func TestUserAuthentication(t *testing.T) {
 }
 
 func TestUserEmailUniqueness(t *testing.T) {
-	testDB, cleanup := setupTestDB(t)
+	testDB, cleanup := SetupTestDB(t)
 	defer cleanup()
 
 	repo := NewUserRepository(testDB)
@@ -112,7 +88,7 @@ func TestUserEmailUniqueness(t *testing.T) {
 		Email:    "unique@example.com",
 		Password: "Password123",
 	}
-	err := repo.Create(user1)
+	_, err := repo.Create(user1)
 	if err != nil {
 		t.Fatalf("Failed to create first user: %v", err)
 	}
@@ -123,14 +99,14 @@ func TestUserEmailUniqueness(t *testing.T) {
 		Email:    "unique@example.com",
 		Password: "AnotherPass123",
 	}
-	err = repo.Create(user2)
+	_, err = repo.Create(user2)
 	if err == nil {
 		t.Error("Should not allow creating user with duplicate email")
 	}
 }
 
 func TestUserUpdate(t *testing.T) {
-	testDB, cleanup := setupTestDB(t)
+	testDB, cleanup := SetupTestDB(t)
 	defer cleanup()
 
 	repo := NewUserRepository(testDB)
@@ -142,7 +118,7 @@ func TestUserUpdate(t *testing.T) {
 		Password: "InitialPass123",
 	}
 
-	err := repo.Create(user)
+	_, err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -167,7 +143,7 @@ func TestUserUpdate(t *testing.T) {
 }
 
 func TestUserDelete(t *testing.T) {
-	testDB, cleanup := setupTestDB(t)
+	testDB, cleanup := SetupTestDB(t)
 	defer cleanup()
 
 	repo := NewUserRepository(testDB)
@@ -179,7 +155,7 @@ func TestUserDelete(t *testing.T) {
 		Password: "DeletePass123",
 	}
 
-	err := repo.Create(user)
+	_, err := repo.Create(user)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}

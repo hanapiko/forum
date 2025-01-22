@@ -1,0 +1,35 @@
+{{ define "content" }}
+<div class="categories-container">
+    <h1>Forum Categories</h1>
+
+    {{ if .User.IsAdmin }}
+    <div class="admin-actions">
+        <a href="/categories/create" class="btn">Create New Category</a>
+    </div>
+    {{ end }}
+
+    <div class="categories-grid">
+        {{ range .Categories }}
+        <div class="category-card">
+            <h2>{{ .Name }}</h2>
+            <p>{{ .Description }}</p>
+            <div class="category-meta">
+                <span>Posts: {{ .PostCount }}</span>
+                <a href="/posts?category={{ .ID }}" class="btn">View Posts</a>
+                
+                {{ if $.User.IsAdmin }}
+                <div class="admin-category-actions">
+                    <a href="/categories/{{ .ID }}/edit" class="btn btn-small">Edit</a>
+                    <a href="/categories/{{ .ID }}/delete" class="btn btn-small btn-danger">Delete</a>
+                </div>
+                {{ end }}
+            </div>
+        </div>
+        {{ end }}
+    </div>
+
+    {{ if not .Categories }}
+    <p>No categories have been created yet.</p>
+    {{ end }}
+</div>
+{{ end }}

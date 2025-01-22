@@ -8,74 +8,65 @@ import (
 	"forum/models"
 )
 
+type SessionRepositoryInterface interface {
+	CreateSession(user *models.User) error
+	ValidateSession(sessionToken string) (*models.User, error)
+	InvalidateSession(userID int) error
+	Validate(token string) (int64, error)
+}
+
 type SessionRepository struct {
-	conn *sql.DB
+	db *sql.DB
 }
 
-func NewSessionRepository(conn *sql.DB) *SessionRepository {
-	return &SessionRepository{conn: conn}
+func NewSessionRepository(db *sql.DB) *SessionRepository {
+	return &SessionRepository{db: db}
 }
 
-// CreateSession creates a new session for a user
-// Ensures only one active session per user
-func (r *SessionRepository) CreateSession(userID int64) (*models.Session, error) {
-	// Validate input
-	if userID <= 0 {
-		return nil, errors.New("invalid user ID")
-	}
+// CreateSession stores a new session for a user
+func (r *SessionRepository) CreateSession(user *models.User) error {
+	// Generate a new session token
+	user.GenerateSessionToken()
 
-	// Start a transaction
-	tx, err := r.conn.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-			return
-		}
-		tx.Commit()
-	}()
-
-	// First, invalidate any existing sessions for this user
-	_, err = tx.Exec("DELETE FROM sessions WHERE user_id = ?", userID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create new session
-	session := models.NewSession(userID)
-
+	// Prepare SQL to insert or update session
 	query := `
-		INSERT INTO sessions (user_id, uuid, expires_at) 
-		VALUES (?, ?, ?)
+		INSERT INTO sessions (user_id, session_token, created_at, expires_at) 
+		VALUES (?, ?, ?, ?) 
+		ON CONFLICT(user_id) DO UPDATE SET 
+		session_token = ?, 
+		created_at = ?, 
+		expires_at = ?
 	`
-	_, err = tx.Exec(query, session.UserID, session.UUID, session.ExpiresAt)
-	if err != nil {
-		return nil, err
-	}
 
-	return session, nil
+	_, err := r.db.Exec(query,
+		user.ID,
+		user.SessionToken,
+		time.Now(),
+		user.SessionExpiry,
+		user.SessionToken,
+		time.Now(),
+		user.SessionExpiry,
+	)
+
+	return err
 }
 
-// ValidateSession checks if a session is valid
-func (r *SessionRepository) ValidateSession(sessionUUID string) (*models.Session, error) {
-	// Validate input
-	if sessionUUID == "" {
-		return nil, errors.New("empty session UUID")
-	}
-
-	var session models.Session
+// ValidateSession checks if a session token is valid
+func (r *SessionRepository) ValidateSession(sessionToken string) (*models.User, error) {
 	query := `
-		SELECT id, user_id, uuid, expires_at 
-		FROM sessions 
-		WHERE uuid = ? AND expires_at > ?
+		SELECT u.id, u.username, u.email, s.session_token, s.expires_at
+		FROM users u
+		JOIN sessions s ON u.id = s.user_id
+		WHERE s.session_token = ? AND s.expires_at > ?
 	`
-	err := r.conn.QueryRow(query, sessionUUID, time.Now()).Scan(
-		&session.ID,
-		&session.UserID,
-		&session.UUID,
-		&session.ExpiresAt,
+
+	user := &models.User{}
+	err := r.db.QueryRow(query, sessionToken, time.Now()).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.SessionToken,
+		&user.SessionExpiry,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -84,52 +75,26 @@ func (r *SessionRepository) ValidateSession(sessionUUID string) (*models.Session
 		return nil, err
 	}
 
-	return &session, nil
+	return user, nil
 }
 
-// DeleteSession removes a session from the database
-func (r *SessionRepository) DeleteSession(sessionUUID string) error {
-	// Validate input
-	if sessionUUID == "" {
-		return errors.New("empty session UUID")
-	}
-
-	_, err := r.conn.Exec("DELETE FROM sessions WHERE uuid = ?", sessionUUID)
-	return err
-}
-
-// GetActiveSessionByUserID retrieves an active session for a specific user
-func (r *SessionRepository) GetActiveSessionByUserID(userID int64) (*models.Session, error) {
-	// Validate input
-	if userID <= 0 {
-		return nil, errors.New("invalid user ID")
-	}
-
-	var session models.Session
+// InvalidateSession removes or expires a user's session
+func (r *SessionRepository) InvalidateSession(userID int) error {
 	query := `
-		SELECT id, user_id, uuid, expires_at 
-		FROM sessions 
-		WHERE user_id = ? AND expires_at > ?
-		LIMIT 1
+		DELETE FROM sessions 
+		WHERE user_id = ?
 	`
-	err := r.conn.QueryRow(query, userID, time.Now()).Scan(
-		&session.ID,
-		&session.UserID,
-		&session.UUID,
-		&session.ExpiresAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // No active session
-		}
-		return nil, err
-	}
 
-	return &session, nil
+	_, err := r.db.Exec(query, userID)
+	return err
 }
 
-// CleanupExpiredSessions removes all expired sessions
-func (r *SessionRepository) CleanupExpiredSessions() error {
-	_, err := r.conn.Exec("DELETE FROM sessions WHERE expires_at <= ?", time.Now())
-	return err
+// Validate checks if a session token is valid and returns the user ID
+func (r *SessionRepository) Validate(token string) (int64, error) {
+	// Implement the Validate method to match the interface
+	user, err := r.ValidateSession(token)
+	if err != nil {
+		return 0, err
+	}
+	return int64(user.ID), nil
 }

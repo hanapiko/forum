@@ -7,16 +7,17 @@ import (
 	"strconv"
 
 	"forum/middleware"
+	"forum/models"
 	"forum/repository"
 )
 
 type InteractionHandler struct {
-	interactionRepo *repository.InteractionRepository
+	interactionRepo repository.InteractionRepositoryInterface
 	authMiddleware  *middleware.AuthMiddleware
 }
 
 func NewInteractionHandler(
-	interactionRepo *repository.InteractionRepository,
+	interactionRepo repository.InteractionRepositoryInterface,
 	authMiddleware *middleware.AuthMiddleware,
 ) *InteractionHandler {
 	return &InteractionHandler{
@@ -64,10 +65,10 @@ func (h *InteractionHandler) LikeEntity(w http.ResponseWriter, r *http.Request) 
 
 	// Add like interaction
 	err := h.interactionRepo.AddInteraction(
-		userID,
+		int64(userID),
 		request.EntityID,
 		request.EntityType,
-		repository.Like,
+		models.Like,
 	)
 	if err != nil {
 		log.Printf("Failed to add like: %v", err)
@@ -107,10 +108,10 @@ func (h *InteractionHandler) DislikeEntity(w http.ResponseWriter, r *http.Reques
 
 	// Add dislike interaction
 	err := h.interactionRepo.AddInteraction(
-		userID,
+		int64(userID),
 		request.EntityID,
 		request.EntityType,
-		repository.Dislike,
+		models.Dislike,
 	)
 	if err != nil {
 		log.Printf("Failed to add dislike: %v", err)

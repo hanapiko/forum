@@ -1,0 +1,34 @@
+<aside class="sidebar">
+    <section class="categories">
+        <h3>Categories</h3>
+        <ul>
+            {{ range .Categories }}
+            <li>
+                <a href="/posts?category={{ .ID }}">{{ .Name }}</a>
+                <span>({{ .PostCount }})</span>
+            </li>
+            {{ end }}
+        </ul>
+    </section>
+
+    {{ if .User }}
+    <section class="user-info">
+        <h3>Welcome, {{ .User.Username }}</h3>
+        <div class="user-actions">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </section>
+    {{ end }}
+
+    <section class="recent-posts">
+        <h3>Recent Posts</h3>
+        {{ range .RecentPosts }}
+        <div class="recent-post">
+            <a href="/posts/{{ .ID }}">{{ .Title }}</a>
+            <span>by {{ .Author }}</span>
+        </div>
+        {{ end }}
+    </section>
+</aside>

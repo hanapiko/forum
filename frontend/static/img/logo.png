@@ -1,0 +1,10 @@
+#!/bin/bash
+# Create a simple logo using ImageMagick
+convert -size 200x200 xc:transparent \
+    -fill '#3498db' \
+    -draw "rectangle 0,0 200,200" \
+    -fill white \
+    -pointsize 60 \
+    -gravity center \
+    -annotate 0 "Forum" \
+    /home/antmusumba/Desktop/forum/frontend/static/img/logo.png

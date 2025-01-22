@@ -1,0 +1,41 @@
+{{ define "content" }}
+<div class="dashboard">
+    <h1>Welcome, {{ .User.Username }}</h1>
+
+    <section class="user-stats">
+        <div class="stat-card">
+            <h3>Your Posts</h3>
+            <p>{{ .UserPostCount }} total posts</p>
+        </div>
+        <div class="stat-card">
+            <h3>Your Comments</h3>
+            <p>{{ .UserCommentCount }} total comments</p>
+        </div>
+    </section>
+
+    <section class="recent-activity">
+        <h2>Recent Posts</h2>
+        {{ if not .RecentPosts }}
+        <p>You haven't created any posts yet.</p>
+        {{ else }}
+        <div class="posts-grid">
+            {{ range .RecentPosts }}
+            <div class="post-card">
+                <h3>{{ .Title }}</h3>
+                <p>{{ truncate .Content 100 }}</p>
+                <div class="post-meta">
+                    <span>{{ .CreatedAt }}</span>
+                    <a href="/posts/{{ .ID }}" class="btn">View</a>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+        {{ end }}
+    </section>
+
+    <section class="account-actions">
+        <a href="/profile/edit" class="btn">Edit Profile</a>
+        <a href="/posts/create" class="btn">Create New Post</a>
+    </section>
+</div>
+{{ end }}

@@ -1,0 +1,17 @@
+{{ define "content" }}
+<div class="error-container">
+    <h1>403 - Forbidden</h1>
+    <p>You do not have permission to access this page.</p>
+    <div class="error-details">
+        <p>{{ .ErrorMessage }}</p>
+    </div>
+    <div class="error-actions">
+        <a href="/" class="btn">Return to Home</a>
+        {{ if .User }}
+        <a href="/dashboard" class="btn">Go to Dashboard</a>
+        {{ else }}
+        <a href="/login" class="btn">Login</a>
+        {{ end }}
+    </div>
+</div>
+{{ end }}

@@ -7,9 +7,19 @@ import (
 	"forum/models"
 )
 
+type CategoryRepositoryInterface interface {
+	Create(category *models.Category) error
+	GetByID(categoryID int64) (*models.Category, error)
+	ListCategories() ([]models.Category, error)
+	Update(category *models.Category) error
+	Delete(categoryID int64) error
+}
+
 type CategoryRepository struct {
 	conn *sql.DB
 }
+
+var _ CategoryRepositoryInterface = &CategoryRepository{}
 
 func NewCategoryRepository(conn *sql.DB) *CategoryRepository {
 	return &CategoryRepository{conn: conn}

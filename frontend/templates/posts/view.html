@@ -1,0 +1,58 @@
+{{ define "content" }}
+<div class="post-detail">
+    <article>
+        <header>
+            <h1>{{ .Post.Title }}</h1>
+            <div class="post-meta">
+                <span>By {{ .Post.Author }}</span>
+                <span>Published on {{ .Post.CreatedAt }}</span>
+                {{ if .Post.Category }}
+                <span>Category: {{ .Post.Category.Name }}</span>
+                {{ end }}
+            </div>
+        </header>
+
+        <div class="post-content">
+            {{ .Post.Content }}
+        </div>
+
+        {{ if .User }}
+        <div class="post-actions">
+            {{ if eq .User.ID .Post.AuthorID }}
+            <a href="/posts/{{ .Post.ID }}/edit" class="btn">Edit</a>
+            <a href="/posts/{{ .Post.ID }}/delete" class="btn btn-danger">Delete</a>
+            {{ end }}
+        </div>
+        {{ end }}
+    </article>
+
+    <section class="comments">
+        <h2>Comments ({{ len .Post.Comments }})</h2>
+        
+        {{ if not .Post.Comments }}
+        <p>No comments yet.</p>
+        {{ else }}
+        <div class="comments-list">
+            {{ range .Post.Comments }}
+            <div class="comment">
+                <div class="comment-meta">
+                    <span>{{ .Author }}</span>
+                    <span>{{ .CreatedAt }}</span>
+                </div>
+                <p>{{ .Content }}</p>
+            </div>
+            {{ end }}
+        </div>
+        {{ end }}
+
+        {{ if .User }}
+        <form action="/posts/{{ .Post.ID }}/comment" method="POST" class="comment-form">
+            <textarea name="content" placeholder="Add a comment" required></textarea>
+            <button type="submit" class="btn">Post Comment</button>
+        </form>
+        {{ else }}
+        <p>Please <a href="/login">log in</a> to comment.</p>
+        {{ end }}
+    </section>
+</div>
+{{ end }}

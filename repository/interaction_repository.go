@@ -3,14 +3,8 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"forum/models"
 	"time"
-)
-
-type InteractionType int
-
-const (
-	Like InteractionType = iota + 1
-	Dislike
 )
 
 type Interaction struct {
@@ -18,8 +12,14 @@ type Interaction struct {
 	UserID     int64           `json:"user_id"`
 	EntityID   int64           `json:"entity_id"`
 	EntityType string          `json:"entity_type"` // 'post' or 'comment'
-	Type       InteractionType `json:"type"`
+	Type       models.InteractionType `json:"type"`
 	CreatedAt  time.Time       `json:"created_at"`
+}
+
+type InteractionRepositoryInterface interface {
+	AddInteraction(userID, entityID int64, entityType string, interactionType models.InteractionType) error
+	GetInteractionCounts(entityID int64, entityType string) (likes, dislikes int, err error)
+	RemoveInteraction(userID, entityID int64, entityType string) error
 }
 
 type InteractionRepository struct {
@@ -30,8 +30,11 @@ func NewInteractionRepository(conn *sql.DB) *InteractionRepository {
 	return &InteractionRepository{conn: conn}
 }
 
+// Ensure InteractionRepository implements the interface
+var _ InteractionRepositoryInterface = &InteractionRepository{}
+
 // AddInteraction adds a like or dislike to a post or comment
-func (r *InteractionRepository) AddInteraction(userID, entityID int64, entityType string, interactionType InteractionType) error {
+func (r *InteractionRepository) AddInteraction(userID, entityID int64, entityType string, interactionType models.InteractionType) error {
 	// Validate input
 	if userID <= 0 || entityID <= 0 || entityType == "" {
 		return errors.New("invalid interaction parameters")
@@ -71,7 +74,7 @@ func (r *InteractionRepository) AddInteraction(userID, entityID int64, entityTyp
 	}
 
 	// Check if user has already interacted with this entity
-	var currentInteraction InteractionType
+	var currentInteraction models.InteractionType
 	err = tx.QueryRow(`
 		SELECT type FROM interactions 
 		WHERE user_id = ? AND entity_id = ? AND entity_type = ?
@@ -113,7 +116,7 @@ func (r *InteractionRepository) GetInteractionCounts(entityID int64, entityType 
 		FROM interactions 
 		WHERE entity_id = ? AND entity_type = ?
 	`
-	err = r.conn.QueryRow(query, Like, Dislike, entityID, entityType).Scan(&likes, &dislikes)
+	err = r.conn.QueryRow(query, models.Like, models.Dislike, entityID, entityType).Scan(&likes, &dislikes)
 	if err == sql.ErrNoRows {
 		return 0, 0, nil
 	}

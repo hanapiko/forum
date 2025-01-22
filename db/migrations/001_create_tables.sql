@@ -3,12 +3,25 @@ PRAGMA foreign_keys = ON;
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-    User_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME
 );
+
+-- Sessions Table
+CREATE TABLE IF NOT EXISTS sessions (
+    user_id INTEGER PRIMARY KEY,
+    session_token TEXT NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create index for faster session lookups
+CREATE INDEX IF NOT EXISTS idx_session_token ON sessions(session_token);
 
 -- Categories Table
 CREATE TABLE IF NOT EXISTS categories (
@@ -24,7 +37,7 @@ CREATE TABLE IF NOT EXISTS posts (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Post Categories Junction Table
@@ -32,8 +45,8 @@ CREATE TABLE IF NOT EXISTS post_categories (
     post_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
     PRIMARY KEY (post_id, category_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
 -- Comments Table
@@ -43,28 +56,19 @@ CREATE TABLE IF NOT EXISTS comments (
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Interactions Table (Likes/Dislikes)
-CREATE TABLE IF NOT EXISTS interactions (
+-- Likes Table
+CREATE TABLE IF NOT EXISTS likes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    entity_id INTEGER NOT NULL,
-    entity_type TEXT NOT NULL, -- 'post' or 'comment'
-    type INTEGER NOT NULL, -- 1 for like, 2 for dislike
+    content_type TEXT NOT NULL, -- 'post' or 'comment'
+    content_id INTEGER NOT NULL,
+    is_like BOOLEAN NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE(user_id, entity_id, entity_type)
-);
-
--- Sessions Table
-CREATE TABLE IF NOT EXISTS sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    uuid TEXT NOT NULL UNIQUE,
-    expires_at DATETIME NOT NULL,
+    UNIQUE(user_id, content_type, content_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

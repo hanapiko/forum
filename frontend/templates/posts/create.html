@@ -1,0 +1,13 @@
+{{ define "content" }}
+<div class="create-post-container">
+    <h2>Create New Post</h2>
+    {{ if .Error }}
+    <div class="error">{{ .Error }}</div>
+    {{ end }}
+    <form method="POST" action="/posts/create">
+        <input type="text" name="title" placeholder="Post Title" required>
+        <textarea name="content" placeholder="Post Content" required></textarea>
+        <button type="submit">Publish Post</button>
+    </form>
+</div>
+{{ end }}
